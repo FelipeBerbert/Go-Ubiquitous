@@ -17,8 +17,6 @@ package com.example.android.sunshine.app;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -37,17 +35,8 @@ import com.example.android.sunshine.app.gcm.RegistrationIntentService;
 import com.example.android.sunshine.app.sync.SunshineSyncAdapter;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.Asset;
-import com.google.android.gms.wearable.DataApi;
-import com.google.android.gms.wearable.PutDataMapRequest;
-import com.google.android.gms.wearable.PutDataRequest;
-import com.google.android.gms.wearable.Wearable;
 
-import java.io.ByteArrayOutputStream;
-
-public class MainActivity extends AppCompatActivity implements ForecastFragment.Callback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class MainActivity extends AppCompatActivity implements ForecastFragment.Callback {
 
     private final String LOG_TAG = MainActivity.class.getSimpleName();
     private static final String DETAILFRAGMENT_TAG = "DFTAG";
@@ -57,7 +46,6 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
     private boolean mTwoPane;
     private String mLocation;
 
-    private GoogleApiClient mGoogleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,11 +109,6 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
             }
         }
 
-        mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(Wearable.API)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .build();
-        mGoogleApiClient.connect();
 
     }
 
@@ -217,52 +200,4 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
         return true;
     }
 
-    @Override
-    public void onConnected(Bundle bundle) {
-        Log.d(LOG_TAG, "onConnected");
-        sendWeather(30, 25, R.drawable.ic_rain);
-
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        Log.d(LOG_TAG, "onConnectionSuspended");
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-        Log.d(LOG_TAG, "onConnectionFailed");
-    }
-
-    public void sendWeather(int max, int min, int weatherIcon){
-        PutDataMapRequest putDMR = PutDataMapRequest.create("/weather");
-        putDMR.getDataMap().putInt("max", max);
-        putDMR.getDataMap().putInt("min", min);
-
-        Bitmap weatherIconBitmap = BitmapFactory.decodeResource(getResources(), weatherIcon);
-        ByteArrayOutputStream byteAOS = new ByteArrayOutputStream();
-        weatherIconBitmap.compress(Bitmap.CompressFormat.PNG, 0, byteAOS);
-        Asset weatherIconAsset = Asset.createFromBytes(byteAOS.toByteArray());
-        putDMR.getDataMap().putAsset("weatherIcon", weatherIconAsset);
-
-        PutDataRequest request = putDMR.asPutDataRequest();
-        Wearable.DataApi.putDataItem(mGoogleApiClient, request).setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
-            @Override
-            public void onResult(DataApi.DataItemResult dataItemResult) {
-                if (dataItemResult.getStatus().isSuccess())
-                    Log.d(LOG_TAG, "sendWeather success");
-                else
-                    Log.d(LOG_TAG, "sendWeather fail");
-            }
-        });
-        //Wearable.MessageApi.sendMessage(mGoogleApiClient, connectedNodeId, messagePath, null);
-
-
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mGoogleApiClient.disconnect();
-    }
 }
